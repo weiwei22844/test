@@ -1,0 +1,32 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual Studio 2008
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "zmqDemo", "zmqDemo\zmqDemo.vcproj", "{126B73B0-3F08-4222-9040-4D2AFFF874C8}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "reqClient", "reqClient\reqClient.vcproj", "{86F0BD6B-3EC9-439A-AF25-26AF89A2A7D4}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pushDemo", "pushDemo\pushDemo.vcproj", "{FA255C24-F7A0-49CD-BE11-63D920B079BD}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{126B73B0-3F08-4222-9040-4D2AFFF874C8}.Debug|Win32.ActiveCfg = Debug|Win32
+		{126B73B0-3F08-4222-9040-4D2AFFF874C8}.Debug|Win32.Build.0 = Debug|Win32
+		{126B73B0-3F08-4222-9040-4D2AFFF874C8}.Release|Win32.ActiveCfg = Release|Win32
+		{126B73B0-3F08-4222-9040-4D2AFFF874C8}.Release|Win32.Build.0 = Release|Win32
+		{86F0BD6B-3EC9-439A-AF25-26AF89A2A7D4}.Debug|Win32.ActiveCfg = Debug|Win32
+		{86F0BD6B-3EC9-439A-AF25-26AF89A2A7D4}.Debug|Win32.Build.0 = Debug|Win32
+		{86F0BD6B-3EC9-439A-AF25-26AF89A2A7D4}.Release|Win32.ActiveCfg = Release|Win32
+		{86F0BD6B-3EC9-439A-AF25-26AF89A2A7D4}.Release|Win32.Build.0 = Release|Win32
+		{FA255C24-F7A0-49CD-BE11-63D920B079BD}.Debug|Win32.ActiveCfg = Debug|Win32
+		{FA255C24-F7A0-49CD-BE11-63D920B079BD}.Debug|Win32.Build.0 = Debug|Win32
+		{FA255C24-F7A0-49CD-BE11-63D920B079BD}.Release|Win32.ActiveCfg = Release|Win32
+		{FA255C24-F7A0-49CD-BE11-63D920B079BD}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
