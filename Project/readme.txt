@@ -1,1 +1,2 @@
 zmqDemo 程序用于和NewBellUI进行配合的VS程序，工程用到了zmq及json开源项目！
+PEELFexplorerV2 用于查看windows或linux的可执行件及库件信息
