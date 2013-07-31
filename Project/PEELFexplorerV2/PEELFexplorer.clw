@@ -13,9 +13,9 @@ Class2=CPEELFexplorerDlg
 Class3=CAboutDlg
 
 ResourceCount=4
-Resource1=IDD_PEELFEXPLORER_DIALOG
+Resource1=IDD_ABOUTBOX
 Resource2=IDR_MAINFRAME
-Resource3=IDD_ABOUTBOX
+Resource3=IDD_PEELFEXPLORER_DIALOG
 Class4=CReportCtrl
 Resource4=IDR_MAINMENU
 
