@@ -197,9 +197,9 @@ BOOL CzmqDemoDlg::OnInitDialog()
     // by ZWW 20130715
     char temp[100];
 #if 1           // for Ubuntu
-    sprintf(temp, "tcp://192.168.1.146:%d", ZMQPULL_PORT);
+    sprintf(temp, "tcp://192.168.1.146:%d", ZMQPULL_PORT);          //sprintf(temp, "tcp://192.168.1.106:%d", ZMQPULL_PORT);
 #else
-    sprintf(temp, "tcp://192.168.1.12:%d", ZMQPULL_PORT);
+    sprintf(temp, "tcp://192.168.1.12:%d", ZMQPULL_PORT);           // for my computer
 #endif
     //if (zmq_connect (pPushSocket, "tcp://192.168.1.222:5555") != 0) {
     if (zmq_connect (pPushSocket, temp) != 0) {
@@ -1034,6 +1034,8 @@ LRESULT CzmqDemoDlg::OnCallComing(WPARAM wParam, LPARAM lParam)
         sprintf(g_cSendBuff, "{\"jsonrpc\": \"2.0\", \"result\": \"reject call\", \"id\": %d}", id);
     }
     sendResult(g_cSendBuff, strlen(g_cSendBuff));
+    
     return 0; 
 }
+
 

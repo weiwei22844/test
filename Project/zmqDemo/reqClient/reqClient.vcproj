@@ -134,7 +134,9 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="libzmq.lib"
 				LinkIncremental="1"
+				AdditionalLibraryDirectories="..\zmqDemo"
 				GenerateDebugInformation="true"
 				SubSystem="1"
 				OptimizeReferences="2"
