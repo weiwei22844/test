@@ -258,7 +258,6 @@ BOOL CPEParser::ShowFileTree(CTreeCtrl *pFileTree)
         hTreeItem0 = pFileTree->InsertItem(&TreeCtrlItem);
     }
 
-
     return TRUE;
 }
 
