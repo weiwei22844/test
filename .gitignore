@@ -1,0 +1,16 @@
+*.suo
+
+*.ncb
+*.aps
+*.opt
+*.plg
+*.obj
+*.sbr
+*.ilk
+*.pdb
+*.idb
+*.bsc
+*.res
+
+Project/zmqDemo/Debug
+Project/zmqDemo/test.docx
