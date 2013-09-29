@@ -56,9 +56,6 @@ END_MESSAGE_MAP()
 
 // CzmqDemoDlg 对话框
 
-
-
-
 CzmqDemoDlg::CzmqDemoDlg(CWnd* pParent /*=NULL*/)
 	: CDialog(CzmqDemoDlg::IDD, pParent)
     , m_ContactOffset(0)
@@ -99,6 +96,16 @@ BEGIN_MESSAGE_MAP(CzmqDemoDlg, CDialog)
     ON_BN_CLICKED(IDC_BTN_TERMINATE, &CzmqDemoDlg::OnBnClickedBtnTerminate)
 
     ON_MESSAGE(WM_MSG_CALLCOMING, &CzmqDemoDlg::OnCallComing)
+    ON_BN_CLICKED(IDC_BTN_CHGSTATUS, &CzmqDemoDlg::OnBnClickedBtnChgstatus)
+    ON_BN_CLICKED(IDC_BTN_LEFT, &CzmqDemoDlg::OnBnClickedBtnLeft)
+    ON_BN_CLICKED(IDC_BTN_RIGHT, &CzmqDemoDlg::OnBnClickedBtnRight)
+    ON_BN_CLICKED(IDC_BTN_UP, &CzmqDemoDlg::OnBnClickedBtnUp)
+    ON_BN_CLICKED(IDC_BTN_DOWN, &CzmqDemoDlg::OnBnClickedBtnDown)
+    ON_BN_CLICKED(IDC_BTNENTER, &CzmqDemoDlg::OnBnClickedBtnenter)
+    ON_BN_CLICKED(IDC_BTN_ONHOOK, &CzmqDemoDlg::OnBnClickedBtnOnhook)
+    ON_BN_CLICKED(IDC_BTN_OFFHOOK, &CzmqDemoDlg::OnBnClickedBtnOffhook)
+    ON_BN_CLICKED(IDC_BTN_ESC, &CzmqDemoDlg::OnBnClickedBtnEsc)
+    ON_BN_CLICKED(IDC_BTN_MENU, &CzmqDemoDlg::OnBnClickedBtnMenu)
 END_MESSAGE_MAP()
 
 
@@ -158,6 +165,7 @@ BOOL CzmqDemoDlg::OnInitDialog()
     m_ContactList.InsertColumn(3, _T("Subscribe"), LVCFMT_LEFT, 50);
     m_ContactList.InsertColumn(4, _T("SubscribePolicy"), LVCFMT_LEFT, 50);
     m_ContactList.InsertColumn(5, _T("Status"), LVCFMT_LEFT, 50);
+    m_ContactList.InsertColumn(6, _T("PictureId"), LVCFMT_LEFT, 50);
     m_ContactList.SetExtendedStyle(LVS_EX_FULLROWSELECT);
 
     m_CalllogList.InsertColumn(0, _T("Id"), LVCFMT_LEFT, 30);
@@ -196,20 +204,25 @@ BOOL CzmqDemoDlg::OnInitDialog()
 
     // by ZWW 20130715
     char temp[100];
-#if 1           // for Ubuntu
+#if 0           // for ubuntu
     sprintf(temp, "tcp://192.168.1.146:%d", ZMQPULL_PORT);          //sprintf(temp, "tcp://192.168.1.106:%d", ZMQPULL_PORT);
 #else
     sprintf(temp, "tcp://192.168.1.12:%d", ZMQPULL_PORT);           // for my computer
 #endif
+
+    //sprintf(temp, "tcp://192.168.1.87:%d", ZMQPULL_PORT);           // for arm bell
+
     //if (zmq_connect (pPushSocket, "tcp://192.168.1.222:5555") != 0) {
     if (zmq_connect (pPushSocket, temp) != 0) {
-        printf ("error in zmq_connect push: %s\n", zmq_strerror (errno));
+        TRACE ("error in zmq_connect push: %s\n", zmq_strerror (errno));
     }
     pMainDlg->ShowTestInfo(0, (LPARAM)"zmq_connect push tcp://192.168.1.12:5555 OK！\r\n");
     int nTimeOut = 1000;
     if(zmq_setsockopt (pPushSocket, ZMQ_LINGER, &nTimeOut, sizeof(nTimeOut)) != 0){
         printf ("error in zmq_setsockopt ZMQ_LINGER: %s\n", zmq_strerror (errno));
     }
+
+    OnBnClickedBtnStart();
 
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
 }
@@ -284,7 +297,7 @@ int sendResult(char *pData, int len)
     memcpy (zmq_msg_data (&msg), pData, len);
 
     if(pPushSocket){
-        ShowMessage("will send msg:");
+        ShowMessage("zmqDemo send:");
         ShowMessage(pData);
         rt = zmq_sendmsg (pPushSocket, &msg, 0);
         if (rt < 0) {
@@ -398,14 +411,18 @@ void processRequest(Json::Value root)
         sprintf(g_cSendBuff, "{\"jsonrpc\": \"2.0\", \"result\": \"logout success\", \"id\": %d}", id);
         sendResult(g_cSendBuff, strlen(g_cSendBuff));
     }else if(strcmp(pMethod, "invite_remote") == 0){
-        if(!PostMessage(pMainDlg->m_hWnd, WM_MSG_CALLCOMING,(WPARAM)id,0))
-        {
+        if(!PostMessage(pMainDlg->m_hWnd, WM_MSG_CALLCOMING,(WPARAM)id,0)){
             ShowMessage("PostMessage failed");
         }
     }else if(strcmp(pMethod, "get_calllog_num") == 0){
         sprintf(g_cSendBuff, "{\"jsonrpc\": \"2.0\", \"result\": %d, \"id\": %d}", pMainDlg->m_database.getCallLogCount(), id);
         sendResult(g_cSendBuff, strlen(g_cSendBuff));
     }else if(strcmp(pMethod, "get_calllog") == 0){
+
+#if 1
+        sprintf(g_cSendBuff, "{\"jsonrpc\": \"2.0\", \"result\": {\"calllog\":[{\"Id\":6,\"Caller\":\"赵@192.168.1.112\",\"Msg\":{\"msg\":[\"1|0|Sat Jan 1 00:13:43 2000|1\",\"0|1|Sat Jan 1 00:13:57 2000|1\"]},\"PictureId\":\"0.png\"},{\"Id\":7,\"Caller\":\"12345@192.168.1.112\",\"Msg\":{\"msg\": [\"0|0|Sat Jan  1 00:14:24 2000|2\", \"1|1|Sat Jan  1 00:22:33 2000|3\"]},\"PictureId\":\"4.png\"}]}, \"id\": %d}", id);
+        sendResult(g_cSendBuff, strlen(g_cSendBuff));
+#else
         int nOffset, nSize;
         Json::Value params = root["params"];
         int nRecordCnt;
@@ -442,6 +459,7 @@ void processRequest(Json::Value root)
         }else{
             ShowMessage("get calllog wrong request format\r\n");
         }
+#endif
     }else if(strcmp(pMethod, "get_friend") == 0){
         int nOffset, nSize;
         int nRecordCnt;
@@ -458,6 +476,10 @@ void processRequest(Json::Value root)
                 if(nRecordCnt > 0)
                     g_cSendBuff[strlen(g_cSendBuff) - 1] = 0;       // delete the "," at the end
                 strcat(g_cSendBuff, "]}}");
+
+                /*if(nRecordCnt == 0){
+                    sprintf(g_cSendBuff, "{\"jsonrpc\": \"2.0\", \"id\": %d, \"result\":\"\"}", id);
+                }*/
                 sendResult(g_cSendBuff, strlen(g_cSendBuff));
             }else{
                 ShowMessage("get contact wrong params size\r\n");
@@ -482,8 +504,8 @@ void processRequest(Json::Value root)
     }else if(strcmp(pMethod, "del_friend") == 0){
         Json::Value params = root["params"];
         if(params.type() == Json::objectValue){
-            int index = params["index"].asInt();
-            if(pMainDlg->deleteContact(index) > 0){
+            int nId = params["Id"].asInt();
+            if(pMainDlg->deleteContact(nId) > 0){
                 sprintf(g_cSendBuff, "{\"jsonrpc\": \"2.0\", \"result\": \"del_data success\", \"id\": %d}", id);
             }else{
                 sprintf(g_cSendBuff, "{\"jsonrpc\": \"2.0\", \"result\": \"del_data failed\", \"id\": %d}", id);
@@ -492,7 +514,16 @@ void processRequest(Json::Value root)
         }
     }else if(strcmp(pMethod, "add_friend") == 0){
         Json::Value params = root["params"];
-        sprintf(g_cSendBuff, "{\"jsonrpc\": \"2.0\", \"result\": \"add_friend success\", \"id\": %d}", id);
+        if(params.type() == Json::objectValue){
+            const char* pName = params["UserName"].asCString();
+            const char* pAddr = params["SipAddr"].asCString();
+            const char* pImage = params["PictureId"].asCString();
+            if(pMainDlg->addContact(pName, pAddr, 0, 0, 0, pImage)>0){
+                sprintf(g_cSendBuff, "{\"jsonrpc\": \"2.0\", \"result\": \"add_friend success\", \"id\": %d}", id);
+            }else{
+                sprintf(g_cSendBuff, "{\"jsonrpc\": \"2.0\", \"result\": \"add_friend failed\", \"id\": %d}", id);
+            }
+        }
         sendResult(g_cSendBuff, strlen(g_cSendBuff));
     }else if(strcmp(pMethod, "edit_friend") == 0){
         sprintf(g_cSendBuff, "{\"jsonrpc\": \"2.0\", \"result\": \"edit_friend success\", \"id\": %d}", id);
@@ -501,7 +532,8 @@ void processRequest(Json::Value root)
         sprintf(g_cSendBuff, "{\"jsonrpc\": \"2.0\", \"result\": \"LinphoneCallEnd\", \"id\": %d}", id);
         sendResult(g_cSendBuff, strlen(g_cSendBuff));
     }else if(strcmp(pMethod, "get_cur_sip_account") == 0){
-        sprintf(g_cSendBuff, "{\"jsonrpc\": \"2.0\", \"result\": \"sip:22@192.168.1.112\", \"id\": %d}", id);
+        //sprintf(g_cSendBuff, "{\"jsonrpc\": \"2.0\", \"result\": \"sip:22@192.168.1.112\", \"id\": %d}", id);
+        sprintf(g_cSendBuff, "{\"jsonrpc\": \"2.0\", \"result\": \"get_cur_sip_account failed\", \"id\": %d}", id);
         sendResult(g_cSendBuff, strlen(g_cSendBuff));
     }else if(strcmp(pMethod, "change_cur_sip_account") == 0){
         sprintf(g_cSendBuff, "{\"jsonrpc\": \"2.0\", \"result\": \"change_cur_sip_account success\", \"id\": %d}", id);
@@ -509,6 +541,63 @@ void processRequest(Json::Value root)
     }else if(strcmp(pMethod, "get_usercase") == 0){
         sprintf(g_cSendBuff, "{\"jsonrpc\": \"2.0\", \"result\": \"camera\", \"id\": %d}", id);
         sendResult(g_cSendBuff, strlen(g_cSendBuff));
+    }else if(strcmp(pMethod, "delete_calllog") == 0){
+        Json::Value params = root["params"];
+        if(params.type() == Json::objectValue){
+            int nId = params["Id"].asInt();
+            if(pMainDlg->deleteCalllog(nId) > 0){
+                sprintf(g_cSendBuff, "{\"jsonrpc\": \"2.0\", \"result\": \"del_data success\", \"id\": %d}", id);
+            }else{
+                sprintf(g_cSendBuff, "{\"jsonrpc\": \"2.0\", \"result\": \"del_data failed\", \"id\": %d}", id);
+            }
+            sendResult(g_cSendBuff, strlen(g_cSendBuff));
+        }
+    }else if(strcmp(pMethod, "get_friend_num") == 0){
+        sprintf(g_cSendBuff, "{\"jsonrpc\": \"2.0\", \"result\": %d, \"id\": %d}", pMainDlg->m_database.getContactCount(), id);
+        sendResult(g_cSendBuff, strlen(g_cSendBuff));
+    }else if(strcmp(pMethod, "get_common_set") == 0){
+        sprintf(g_cSendBuff, "{\"jsonrpc\": \"2.0\", \"result\": {\"devName\":\"zhaoweiwei\",\"openRmtTone\":1,\"openMsgTone\":0,\"supendTime\":100,\"defaultMode\":\"video\",\"language\":\"en\"}, \"id\": %d}", id);
+        sendResult(g_cSendBuff, strlen(g_cSendBuff));
+    }else if(strcmp(pMethod, "get_video_set") == 0){
+        sprintf(g_cSendBuff, "{\"jsonrpc\": \"2.0\", \"result\": {\"hdmiInType\":\"content\",\"hdmiEnable\":1,\"camera\":\"local\",\"size\":\"1080p\",\"framerate\":25,\"bitrate\":4000}, \"id\": %d}", id);
+        sendResult(g_cSendBuff, strlen(g_cSendBuff));
+    }else if(strcmp(pMethod, "get_audio_set") == 0){
+        sprintf(g_cSendBuff, "{\"jsonrpc\": \"2.0\", \"result\": {\"audioIn\":\"micArray\",\"audioOut\":\"speaker\",\"inVolume\":0,\"outVolume\":0}, \"id\": %d}", id);
+        sendResult(g_cSendBuff, strlen(g_cSendBuff));
+    }else if(strcmp(pMethod, "get_sip_set") == 0){
+        sprintf(g_cSendBuff, "{\"jsonrpc\": \"2.0\", \"result\": {\"sipAddr\":\"123@192.168.1.112\",\"domain\":\"192.168.1.118\"}, \"id\": %d}", id);
+        sendResult(g_cSendBuff, strlen(g_cSendBuff));
+    }else if(strcmp(pMethod, "get_sytem_info") == 0){
+        sprintf(g_cSendBuff, "{\"jsonrpc\": \"2.0\", \"result\": {\"devType\":\"iBeLink\",\"devSerial\":\"123456\",\"version\":\"v1.0.0 build-130806\"}, \"id\": %d}", id);
+        sendResult(g_cSendBuff, strlen(g_cSendBuff));
+    }else if(strcmp(pMethod, "get_globalParam") == 0){
+        sprintf(g_cSendBuff, "{\"jsonrpc\": \"2.0\", \"result\": {\"devName\":\"zhaoweiwei\",\"outVolume\":0,\"language\":\"en\",\"defaultMode\":\"audio\"}, \"id\": %d}", id);
+        sendResult(g_cSendBuff, strlen(g_cSendBuff));
+    }else if(strcmp(pMethod, "set_common_set") == 0){
+        sprintf(g_cSendBuff, "{\"jsonrpc\":\"2.0\",\"result\":\"set_common_set success\",\"id\":%d}", id);
+        sendResult(g_cSendBuff, strlen(g_cSendBuff));
+    }else if(strcmp(pMethod, "find_contact") == 0){
+        const char *pKey = NULL;
+        Json::Value params = root["params"];
+        if(params.type() == Json::stringValue){
+            pKey = params.asCString();
+            if(strcmp(pKey, "3") == 0){
+                sprintf(g_cSendBuff, "{\"jsonrpc\":\"2.0\",\"result\":{\"contacts\":[{\"UserName\":\"312\",\"SipAddr\":\"312@192.168.1.112\"},{\"UserName\":\"321\",\"SipAddr\":\"321@192.168.1.112\"},{\"UserName\":\"325\",\"SipAddr\":\"325@192.168.1.112\"}]},\"id\":%d}", id);
+            }else if(strcmp(pKey, "32") == 0){
+                sprintf(g_cSendBuff, "{\"jsonrpc\":\"2.0\",\"result\":{\"contacts\":[{\"UserName\":\"321\",\"SipAddr\":\"321@192.168.1.112\"},{\"UserName\":\"325\",\"SipAddr\":\"325@192.168.1.112\"}]},\"id\":%d}", id);
+            }else if(strcmp(pKey, "321") == 0){
+                sprintf(g_cSendBuff, "{\"jsonrpc\":\"2.0\",\"result\":{\"contacts\":[{\"UserName\":\"321\",\"SipAddr\":\"321@192.168.1.112\"}]},\"id\":%d}", id);
+            }else if(strcmp(pKey, "31") == 0 || strcmp(pKey, "312") == 0){
+                sprintf(g_cSendBuff, "{\"jsonrpc\":\"2.0\",\"result\":{\"contacts\":[{\"UserName\":\"312\",\"SipAddr\":\"312@192.168.1.112\"}]},\"id\":%d}", id);
+            }else if(strcmp(pKey, "325") == 0){
+                sprintf(g_cSendBuff, "{\"jsonrpc\":\"2.0\",\"result\":{\"contacts\":[{\"UserName\":\"325\",\"SipAddr\":\"325@192.168.1.112\"}]},\"id\":%d}", id);
+            }else if(strcmp(pKey, "5") == 0){
+                sprintf(g_cSendBuff, "{\"jsonrpc\":\"2.0\",\"result\":{\"contacts\":[{\"UserName\":\"51\",\"SipAddr\":\"51@192.168.1.112\"},{\"UserName\":\"52\",\"SipAddr\":\"52@192.168.1.112\"},{\"UserName\":\"53\",\"SipAddr\":\"53@192.168.1.112\"},{\"UserName\":\"54\",\"SipAddr\":\"54@192.168.1.112\"},{\"UserName\":\"55\",\"SipAddr\":\"55@192.168.1.112\"},{\"UserName\":\"56\",\"SipAddr\":\"56@192.168.1.112\"},{\"UserName\":\"57\",\"SipAddr\":\"57@192.168.1.112\"}]},\"id\":%d}", id);
+            }else{
+                sprintf(g_cSendBuff, "{\"jsonrpc\":\"2.0\",\"result\":{\"contacts\":[]},\"id\":%d}", id);
+            }
+            sendResult(g_cSendBuff, strlen(g_cSendBuff));
+        }
     }
 }
 
@@ -566,26 +655,6 @@ void processRecvData(char* pData, int nSize)
                 strlen("{\"jsonrpc\": \"2.0\", \"error\": {\"code\": -32700, \"message\": \"Parse error\"}, \"id\": null}"));
         }
 #endif
-        /*value.Members
-        int recordCount = value["recordCount"].asInt();
-        if(recordCount > 0)                             // 联系人总人数
-        {
-            const Json::Value arrayObj = value["rows"];
-            int index = m_ListContact.GetItemCount();
-            int nSize = arrayObj.size();
-            if(nSize < 10)
-                bComplet = TRUE;
-            for (int i=0; i<nSize; i++)
-            {
-                std::string out = arrayObj[i]["passenger_name"].asString();
-                m_ListContact.InsertItem(index, out.c_str());
-                out = arrayObj[i]["passenger_id_no"].asString();
-                m_ListContact.SetItemText(index, 1, out.c_str());
-                index++;
-            }
-        }else{
-            bComplet = TRUE;
-        }*/
     }else{
         sendResult("{\"jsonrpc\": \"2.0\", \"error\": {\"code\": -32600, \"message\": \"Invalid JSON-RPC.\"}, \"id\": null}", 
             strlen("{\"jsonrpc\": \"2.0\", \"error\": {\"code\": -32600, \"message\": \"Invalid JSON-RPC.\"}, \"id\": null}"));
@@ -666,8 +735,8 @@ UINT ServerFunc(void *param)
         
         memset(recv, 0, sizeof(recv));
         memcpy(recv, zmq_msg_data (&msg), zmq_msg_size (&msg));
-        processRecvData(recv, zmq_msg_size (&msg));
         pMainDlg->ShowTestInfo(0, (LPARAM)recv);
+        processRecvData(recv, zmq_msg_size (&msg));
     }
     elapsed = zmq_stopwatch_stop (watch);
     if (elapsed == 0)
@@ -881,9 +950,15 @@ void CzmqDemoDlg::OnBnClickedOk()
         OutputDebugString(temp);
     }*/
 
-    if(m_database.delContact(33) < 0){
+    /*if(m_database.delContact(33) < 0){
         OutputDebugString(m_database.getlastErrorInfo());
-    }
+    }*/
+
+    char cBuf[200];
+    sprintf(cBuf, "{\"jsonrpc\": \"2.0\", \"result\": \"赵\", \"id\": 1}");
+    int nSize = sizeof(cBuf);
+
+    sendResult(cBuf, strlen(cBuf));
 }
 
 static int getContactCb(void *pUserData, int nColumn, char **columnValue, char **columnName){
@@ -920,7 +995,11 @@ static int getCallLogCbResp(void *pUserData, int nColumn, char **columnValue, ch
     strcat(g_cSendBuff, temp);
     for(int i=1; i < nColumn; i++)
     {
-        if(i == nColumn -1)
+        if(i == 1)
+            sprintf(temp, "\"%s\":%d,", columnName[i], atoi(columnValue[i]));
+        else if(i == 2)
+            sprintf(temp, "\"%s\":%d,", columnName[i], atoi(columnValue[i]));
+        else if(i == nColumn -1)
             sprintf(temp, "\"%s\":%d},", columnName[i], atoi(columnValue[i]));
         else if(i == nColumn - 2)
             sprintf(temp, "\"%s\":%d,", columnName[i], atoi(columnValue[i]));
@@ -938,8 +1017,10 @@ static int getContactCbResp(void *pUserData, int nColumn, char **columnValue, ch
     for(int i=1; i < nColumn; i++)
     {
         if(i == nColumn -1)
-            sprintf(temp, "\"%s\":%d},", columnName[i], atoi(columnValue[i]));
-        else if(i == nColumn - 2)
+            sprintf(temp, "\"%s\":\"%s\"},", columnName[i], columnValue[i]);
+        else if(i == nColumn -2)
+            sprintf(temp, "\"%s\":%d,", columnName[i], atoi(columnValue[i]));
+        else if(i == nColumn - 3)
             sprintf(temp, "\"%s\":%d,", columnName[i], atoi(columnValue[i]));
         else
             sprintf(temp, "\"%s\":\"%s\",", columnName[i], columnValue[i]);
@@ -969,6 +1050,16 @@ int CzmqDemoDlg::getContacts(int offset, int size)
 int CzmqDemoDlg::deleteContact(int index)
 {
     return m_database.delContact(index);
+}
+
+int CzmqDemoDlg::addContact(const char* pName, const char* pSipAddr, int subscribe, int SubscribePolicy, int Status, const char* pImage)
+{
+    return m_database.insertNewContact(pName, pSipAddr, subscribe, SubscribePolicy, Status, pImage);
+}
+
+int CzmqDemoDlg::deleteCalllog(int index)
+{
+    return m_database.deleteCalllog(index);
 }
 
 void CzmqDemoDlg::OnBnClickedBtnStop()
@@ -1039,3 +1130,78 @@ LRESULT CzmqDemoDlg::OnCallComing(WPARAM wParam, LPARAM lParam)
 }
 
 
+void CzmqDemoDlg::OnBnClickedBtnChgstatus()
+{
+    // TODO: 在此添加控件通知处理程序代码
+    static int test = 1;
+    if(test%2)
+        sendResult("{\"jsonrpc\": \"2.0\", \"method\": \"Registration on sip:192.168.1.112:5060 successful.\"}", 
+        strlen("{\"jsonrpc\": \"2.0\", \"method\": \"Registration on sip:192.168.1.112:5060 successful.\"}"));
+    else
+        sendResult("{\"jsonrpc\": \"2.0\", \"method\": \"Registration on sip:192.168.1.114:5060 failed: ****\"}", 
+        strlen("{\"jsonrpc\": \"2.0\", \"method\": \"Registration on sip:192.168.1.114:5060 failed: ****\"}"));
+    test++;
+}
+
+void CzmqDemoDlg::OnBnClickedBtnLeft()
+{
+    // TODO: 在此添加控件通知处理程序代码
+    sendResult("{\"jsonrpc\": \"2.0\", \"method\": \"turn_left\", \"id\": 1}", 
+        strlen("{\"jsonrpc\": \"2.0\", \"method\": \"turn_left\", \"id\": 1}"));
+}
+
+void CzmqDemoDlg::OnBnClickedBtnRight()
+{
+    // TODO: 在此添加控件通知处理程序代码
+    sendResult("{\"jsonrpc\": \"2.0\", \"method\": \"turn_right\", \"id\": 1}", 
+        strlen("{\"jsonrpc\": \"2.0\", \"method\": \"turn_right\", \"id\": 1}"));
+}
+
+void CzmqDemoDlg::OnBnClickedBtnUp()
+{
+    // TODO: 在此添加控件通知处理程序代码
+    sendResult("{\"jsonrpc\": \"2.0\", \"method\": \"turn_up\", \"id\": 1}", 
+        strlen("{\"jsonrpc\": \"2.0\", \"method\": \"turn_up\", \"id\": 1}"));
+}
+
+void CzmqDemoDlg::OnBnClickedBtnDown()
+{
+    // TODO: 在此添加控件通知处理程序代码
+    sendResult("{\"jsonrpc\": \"2.0\", \"method\": \"turn_down\", \"id\": 1}", 
+        strlen("{\"jsonrpc\": \"2.0\", \"method\": \"turn_down\", \"id\": 1}"));
+}
+
+void CzmqDemoDlg::OnBnClickedBtnenter()
+{
+    // TODO: 在此添加控件通知处理程序代码
+    sendResult("{\"jsonrpc\": \"2.0\", \"method\": \"enter\", \"id\": 1}", 
+        strlen("{\"jsonrpc\": \"2.0\", \"method\": \"enter\", \"id\": 1}"));
+}
+
+void CzmqDemoDlg::OnBnClickedBtnOnhook()
+{
+    // TODO: 在此添加控件通知处理程序代码
+    sendResult("{\"jsonrpc\": \"2.0\", \"method\": \"on_hook\", \"id\": 1}", 
+        strlen("{\"jsonrpc\": \"2.0\", \"method\": \"on_hook\", \"id\": 1}"));
+}
+
+void CzmqDemoDlg::OnBnClickedBtnOffhook()
+{
+    // TODO: 在此添加控件通知处理程序代码
+    sendResult("{\"jsonrpc\": \"2.0\", \"method\": \"off_hook\", \"id\": 1}", 
+        strlen("{\"jsonrpc\": \"2.0\", \"method\": \"off_hook\", \"id\": 1}"));
+}
+
+void CzmqDemoDlg::OnBnClickedBtnEsc()
+{
+    // TODO: 在此添加控件通知处理程序代码
+    sendResult("{\"jsonrpc\": \"2.0\", \"method\": \"esc\", \"id\": 1}", 
+        strlen("{\"jsonrpc\": \"2.0\", \"method\": \"esc\", \"id\": 1}"));
+}
+
+void CzmqDemoDlg::OnBnClickedBtnMenu()
+{
+    // TODO: 在此添加控件通知处理程序代码
+    sendResult("{\"jsonrpc\": \"2.0\", \"method\": \"menu\", \"id\": 1}", 
+        strlen("{\"jsonrpc\": \"2.0\", \"method\": \"menu\", \"id\": 1}"));
+}

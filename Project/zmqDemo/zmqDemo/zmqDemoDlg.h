@@ -62,9 +62,21 @@ public:
 
     int getCalllog(int offset, int size);
     int getContacts(int offset, int size);
+    int addContact(const char* pName, const char* pSipAddr, int subscribe, int SubscribePolicy, int Status, const char* pImage);
     int deleteContact(int index);
+    int deleteCalllog(int index);
     afx_msg void OnClose();
     afx_msg void OnBnClickedBtnCall();
     afx_msg void OnBnClickedBtnTerminate();
 
+    afx_msg void OnBnClickedBtnChgstatus();
+    afx_msg void OnBnClickedBtnLeft();
+    afx_msg void OnBnClickedBtnRight();
+    afx_msg void OnBnClickedBtnUp();
+    afx_msg void OnBnClickedBtnDown();
+    afx_msg void OnBnClickedBtnenter();
+    afx_msg void OnBnClickedBtnOnhook();
+    afx_msg void OnBnClickedBtnOffhook();
+    afx_msg void OnBnClickedBtnEsc();
+    afx_msg void OnBnClickedBtnMenu();
 };

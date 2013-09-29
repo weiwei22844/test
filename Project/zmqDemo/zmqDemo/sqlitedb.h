@@ -22,12 +22,13 @@ public:
     //member function
     
     CString getDbName();
-    int insertNewContact(char* pName, char* pSipAddr, int subscribe, int SubscribePolicy, int Status);
+    int insertNewContact(const char* pName, const char* pSipAddr, int subscribe, int SubscribePolicy, int Status, const char *pImage);
     int getContactCount();
     int getCallLogCount();
     int getContact(int offset, int size, int (*callback)(void*,int,char**,char**), void* pUserData);
     int getCalllog(int offset, int size, int (*callback)(void*,int,char**,char**), void* pUserData);
     int delContact(int index);
+    int deleteCalllog(int index);
     char* getlastErrorInfo();
 
 private:

@@ -96,7 +96,7 @@ int SqliteDB::InitDataBase(CString dbName)
         return -2;
     }
     if(!bTableExit){
-        rt = sqlite3_exec(m_pDataBase, "CREATE TABLE contact([Id] integer primary key,[UserName] varchar(32),[SipAddr] varchar(50),[Subscribe] int,[SubscribePolicy] int,[Status] int)", 0, 0, &zErrMsg);
+        rt = sqlite3_exec(m_pDataBase, "CREATE TABLE contact([Id] integer primary key,[UserName] varchar(32),[SipAddr] varchar(50),[Subscribe] int,[SubscribePolicy] int,[Status] int,[PictureId] varchar(50))", 0, 0, &zErrMsg);
         if(rt != SQLITE_OK) {
             sprintf(m_errorInfo, "create table contact failed: %s", sqlite3_errmsg(m_pDataBase));
             sqlite3_close(m_pDataBase);
@@ -106,9 +106,9 @@ int SqliteDB::InitDataBase(CString dbName)
 #if 1
         for(int i = 0; i < 33; i++){
             if(i%2)
-                sprintf(sqlstatement, "insert into contact([UserName],[SipAddr],[Subscribe],[SubscribePolicy],[Status]) values('%d','sip:%d@192.168.1.112','%d',%d,%d);", i+100, i+100, i%2,i%6 == 0,i%2);
+                sprintf(sqlstatement, "insert into contact([UserName],[SipAddr],[Subscribe],[SubscribePolicy],[Status],[PictureId]) values('%d','sip:%d@192.168.1.112','%d',%d,%d,'%d.png');", i+100, i+100, i%2,i%6 == 0,i%2,i%5);
             else
-                sprintf(sqlstatement, "insert into contact([UserName],[SipAddr],[Subscribe],[SubscribePolicy],[Status]) values('%d','sip:%d@192.168.1.112','%d',%d,%d);", i+100, i+100, i%3,i%7 == 0,i%2);
+                sprintf(sqlstatement, "insert into contact([UserName],[SipAddr],[Subscribe],[SubscribePolicy],[Status],[PictureId]) values('%d','sip:%d@192.168.1.112','%d',%d,%d,'%d.png');", i+100, i+100, i%3,i%7 == 0,i%2,i%5);
             rt=sqlite3_exec(m_pDataBase, sqlstatement, 0, 0, &zErrMsg);
             if(rt != SQLITE_OK) {
                 sprintf(m_errorInfo, "insert table contact failed: %s", sqlite3_errmsg(m_pDataBase));
@@ -138,9 +138,9 @@ int SqliteDB::InitDataBase(CString dbName)
 #if 1
         for(int i = 0; i < 100; i++){
             if(i%2)
-                sprintf(sqlstatement, "insert into callLog([Callin],[Disconnect],[Caller],[Answer],[StartDate],[Duration],[Quality]) values('%d','0','sip:%d@192.168.1.112','30044','20120824 %02d1630',%d,%d);", i%2, i+100, i%24, i+20,i%6 == 0);
+                sprintf(sqlstatement, "insert into callLog([Callin],[Disconnect],[Caller],[Answer],[StartDate],[Duration],[Quality]) values('%d','%d','sip:%d@192.168.1.112','30044','20120824 %02d1630',%d,%d);", i%2, i%3 == 0, i+100, i%24, i+20,i%6 == 0);
             else
-                sprintf(sqlstatement, "insert into callLog([Callin],[Disconnect],[Caller],[Answer],[StartDate],[Duration],[Quality]) values('%d','1','sip:%d@192.168.1.112','30388','20130824 %02d1630',%d,%d);", i%3, i+100, i%24, i+20,i%7 == 0);
+                sprintf(sqlstatement, "insert into callLog([Callin],[Disconnect],[Caller],[Answer],[StartDate],[Duration],[Quality]) values('%d','%d','sip:%d@192.168.1.112','30388','20130824 %02d1630',%d,%d);", i%3 == 0, i%3 !=0, i+100, i%24, i+20,i%7 == 0);
             rt=sqlite3_exec(m_pDataBase, sqlstatement, 0, 0, &zErrMsg);
             if(rt != SQLITE_OK) {
                 sprintf(m_errorInfo, "insert table callLog failed: %s", sqlite3_errmsg(m_pDataBase));
@@ -161,7 +161,7 @@ CString SqliteDB::getDbName()
     return m_dbName;
 }
 
-int SqliteDB::insertNewContact(char* pName, char* pSipAddr, int subscribe, int SubscribePolicy, int Status)
+int SqliteDB::insertNewContact(const char* pName, const char* pSipAddr, int subscribe, int SubscribePolicy, int Status, const char *pImage)
 {
     int rt;
     char *zErrMsg = 0;
@@ -172,7 +172,7 @@ int SqliteDB::insertNewContact(char* pName, char* pSipAddr, int subscribe, int S
     }
    
     char sqlstatement[500] = { 0 };
-    sprintf(sqlstatement, "insert into contact([UserName],[SipAddr],[Subscribe],[SubscribePolicy],[Status]) values(%s,%s,%d,%d,%d);", pName, pSipAddr, subscribe, SubscribePolicy, Status);
+    sprintf(sqlstatement, "insert into contact([UserName],[SipAddr],[Subscribe],[SubscribePolicy],[Status],[PictureId]) values('%s','%s',%d,%d,%d,'%s');", pName, pSipAddr, subscribe, SubscribePolicy, Status, pImage);
     rt=sqlite3_exec(m_pDataBase, sqlstatement, 0, 0, &zErrMsg);
     if(rt != SQLITE_OK) {
         sprintf(m_errorInfo, "insert table contact failed: %s", sqlite3_errmsg(m_pDataBase));
@@ -299,6 +299,29 @@ int SqliteDB::delContact(int index)
     rt = sqlite3_exec(m_pDataBase, sqlstatement, deleteCb, &nDeleteCnt, &zErrMsg);
     if(rt != SQLITE_OK){
         sprintf(m_errorInfo, "delete table contact failed: %s", sqlite3_errmsg(m_pDataBase));
+        sqlite3_close(m_pDataBase);
+        return -1;
+    }
+    sqlite3_close(m_pDataBase);
+    return 1;
+}
+
+int SqliteDB::deleteCalllog(int index)
+{
+    int rt;
+    char *zErrMsg = 0;
+    rt = sqlite3_open(m_dbName, &m_pDataBase);
+    if( rt ){
+        sprintf(m_errorInfo, "Can't open database: %s", sqlite3_errmsg(m_pDataBase));
+        return -1;
+    }
+
+    int nDeleteCnt;
+    char sqlstatement[500] = { 0 };
+    sprintf(sqlstatement, "DELETE FROM callLog WHERE Id=%d;", index);
+    rt = sqlite3_exec(m_pDataBase, sqlstatement, deleteCb, &nDeleteCnt, &zErrMsg);
+    if(rt != SQLITE_OK){
+        sprintf(m_errorInfo, "delete table callLog failed: %s", sqlite3_errmsg(m_pDataBase));
         sqlite3_close(m_pDataBase);
         return -1;
     }
